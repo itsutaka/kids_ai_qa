@@ -1,1 +1,4 @@
 venv/
+.specstory/
+modules/__pycache__/
+.cursorindexingignore
