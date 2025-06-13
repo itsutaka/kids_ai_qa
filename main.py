@@ -1,40 +1,32 @@
-import sounddevice as sd
-import scipy.io.wavfile as wav
-from faster_whisper import WhisperModel
-from modules.searcher import search
+from modules.transcriber import transcribe
+from modules.searcher import web_search
+from modules.llm import ask_ai
 from modules.speaker import speak
+from modules.recorder import record_audio
 
-# 錄音設定
-duration = 5  # 錄音秒數
-def record_audio(filename="input.wav"):
-    print("🎙️ 開始錄音，請說話...")
-    samplerate = 16000
-    recording = sd.rec(int(samplerate * duration), samplerate=samplerate, channels=1, dtype='int16')
-    sd.wait()
-    wav.write(filename, samplerate, recording)
-    print("✅ 錄音完成！音訊已儲存為：" + filename)
-
-# 語音轉文字
-def transcribe_audio(filename="input.wav"):
-    model = WhisperModel("medium", device="cpu", compute_type="int8")
-    segments, _ = model.transcribe(filename)
-    return "".join([segment.text for segment in segments])
-
-# 主流程
 def main():
-    record_audio()
-    question = transcribe_audio().strip()
-    print("🧠 Whisper 辨識結果：", question)
+    print("🎙️ 開始錄音，請說話...")
+    record_audio("input.wav")
 
-    if question:
-        # 包裝成兒童風格 prompt
-        prompt = f"請用可愛、簡單又親切的方式，告訴 6 到 8 歲小朋友：「{question}」"
-        answer = search(prompt)
-        print("🔍 查詢回答：", answer)
-        print("🔊 語音合成中...")
-        speak(answer)
-    else:
-        print("😅 沒聽清楚，請再試一次！")
+    print("✅ 錄音完成！音訊已儲存為：input.wav")
+
+    question = transcribe("input.wav")
+    print(f"🧠 Whisper 辨識結果：{question}")
+
+    if not question.strip():
+        print("⚠️ 沒有辨識到語音內容")
+        return
+
+    print("🔍 查詢中...")
+    search_result = web_search(question)
+    print(f"🔍 查詢結果：{search_result}")
+
+    print("🤖 生成兒童化回答中...")
+    answer = ask_ai(question, search_result)
+    print(f"🧒 AI回答：{answer}")
+
+    print("🔊 語音合成中...")
+    speak(answer)
 
 if __name__ == "__main__":
     main()
