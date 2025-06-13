@@ -3,7 +3,7 @@ import threading
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, 
                             QTextEdit, QVBoxLayout, QHBoxLayout, 
                             QWidget, QLabel, QComboBox)
-from PyQt6.QtCore import Qt, pyqtSignal, QObject
+from PyQt6.QtCore import Qt, pyqtSignal, QObject, QTimer
 from PyQt6.QtGui import QFont, QIcon
 import pygame
 import tempfile
@@ -68,9 +68,9 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.tts_selector)
         
         # 錄音按鈕
-        self.record_button = QPushButton("🎙️ 開始錄音")
+        self.record_button = QPushButton("🎙️ 開始對話")
         self.record_button.setMinimumHeight(50)
-        self.record_button.clicked.connect(self.start_recording)
+        self.record_button.clicked.connect(self.toggle_conversation)
         layout.addWidget(self.record_button)
         
         # 問題顯示區
@@ -108,6 +108,9 @@ class MainWindow(QMainWindow):
         
         layout.addLayout(button_layout)
         
+        # 添加對話狀態標記
+        self.is_conversation_active = False
+        
         # 設定樣式
         self.setStyleSheet("""
             QMainWindow {
@@ -138,6 +141,18 @@ class MainWindow(QMainWindow):
                 color: #666;
             }
         """)
+
+    def toggle_conversation(self):
+        if not self.is_conversation_active:
+            # 開始對話
+            self.is_conversation_active = True
+            self.record_button.setText("🎙️ 正在對話")
+            self.start_recording()
+        else:
+            # 結束對話
+            self.is_conversation_active = False
+            self.record_button.setText("🎙️ 開始對話")
+            self.status_label.setText("對話已結束")
 
     def start_recording(self):
         self.record_button.setEnabled(False)
@@ -185,9 +200,20 @@ class MainWindow(QMainWindow):
     def on_answer_finished(self, answer):
         self.answer_display.setText(answer)
         self.status_label.setText("回答完成！")
-        self.record_button.setEnabled(True)
         self.speak_button.setEnabled(True)
+        
+        # 自動播放回答
         self.speak_answer()
+        
+        # 如果對話仍在進行中，自動開始下一輪錄音
+        if self.is_conversation_active:
+            # 等待語音播放完成後再開始下一輪
+            def start_next_round():
+                self.record_button.setEnabled(True)
+                self.start_recording()
+            
+            # 使用 QTimer 來延遲開始下一輪錄音
+            QTimer.singleShot(1000, start_next_round)  # 延遲 1 秒後開始下一輪
 
     def speak_answer(self):
         if self.answer_display.toPlainText():
@@ -213,7 +239,9 @@ class MainWindow(QMainWindow):
 
     def force_stop_speaking(self):
         stop_speaking()
-        self.status_label.setText("AI說話已強制停止！")
+        # 如果對話仍在進行中，立即開始下一輪
+        if self.is_conversation_active:
+            self.start_recording()
 
     def speak_gemini_answer(self):
         question = self.question_display.toPlainText()

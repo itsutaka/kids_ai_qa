@@ -1874,3 +1874,81 @@ def speak_by_google_tts(text, lang="zh-TW"):
 
 ---
 
+_**User**_
+
+將應用程式修改成對話的形式，將“開始錄音”的按鈕改成“開始對話”，按下開始對話後，開始按鈕變成“正在對話”， 在ＴＴＳ回答結束後自動啟動下一輪對話，直到按下“正在對話”來關閉收音，關閉對話。
+
+---
+
+_**Assistant**_
+
+我會幫你修改 `gui.py` 來實現對話形式的功能。首先讓我們檢查當前的 `gui.py` 內容。
+
+
+---
+
+Read file: gui.py
+
+---
+
+我會幫你修改 `gui.py` 來實現連續對話的功能。以下是修改建議：
+
+```python
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        # ... 其他初始化代碼保持不變 ...
+        
+        # 修改錄音按鈕文字和功能
+        self.record_button = QPushButton("🎙️ 開始對話")
+        self.record_button.setMinimumHeight(50)
+        self.record_button.clicked.connect(self.toggle_conversation)
+        layout.addWidget(self.record_button)
+        
+        # 添加對話狀態標記
+        self.is_conversation_active = False
+        
+        # ... 其他初始化代碼保持不變 ...
+
+    def toggle_conversation(self):
+        if not self.is_conversation_active:
+            # 開始對話
+            self.is_conversation_active = True
+            self.record_button.setText("🎙️ 正在對話")
+            self.start_recording()
+        else:
+            # 結束對話
+            self.is_conversation_active = False
+            self.record_button.setText("🎙️ 開始對話")
+            self.status_label.setText("對話已結束")
+
+    def start_recording(self):
+        self.record_button.setEnabled(False)
+        self.status_label.setText("正在錄音...")
+        
+        # 開始錄音
+        worker = Worker(record_audio, "input.wav")
+        worker.signals.finished.connect(self.on_recording_finished)
+        worker.signals.error.connect(self.on_error)
+        worker.start()
+
+    def on_answer_finished(self, answer):
+        self.answer_display.setText(answer)
+        self.status_label.setText("回答完成！")
+        self.speak_button.setEnabled(True)
+        
+        # 自動播放回答
+        self.speak_answer()
+        
+        # 如果對話仍在進行中，自動開始下一輪錄音
+        if self.is_conversation_active:
+            # 等待語音播放完成後再開始下一輪
+            def start_next_round():
+                self.record_button.setEnabled(True)
+                self.start_recording()
+            
+            # 使用 QTimer 來延遲開始下一輪錄音
+            QT
+
+---
+
