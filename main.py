@@ -1,25 +1,40 @@
-from modules.recorder import record_audio
-from modules.transcriber import transcribe_audio
+import sounddevice as sd
+import scipy.io.wavfile as wav
+from faster_whisper import WhisperModel
 from modules.searcher import search
-from modules.responder import ask_llama
+from modules.speaker import speak
 
-# Step 1: 錄音
-record_audio()
+# 錄音設定
+duration = 5  # 錄音秒數
+def record_audio(filename="input.wav"):
+    print("🎙️ 開始錄音，請說話...")
+    samplerate = 16000
+    recording = sd.rec(int(samplerate * duration), samplerate=samplerate, channels=1, dtype='int16')
+    sd.wait()
+    wav.write(filename, samplerate, recording)
+    print("✅ 錄音完成！音訊已儲存為：" + filename)
 
-# Step 2: 語音辨識
-question = transcribe_audio()
-print("📝 小朋友問：", question)
+# 語音轉文字
+def transcribe_audio(filename="input.wav"):
+    model = WhisperModel("medium", device="cpu", compute_type="int8")
+    segments, _ = model.transcribe(filename)
+    return "".join([segment.text for segment in segments])
 
-# Step 3: DuckDuckGo 查詢
-results = search(question)
-print("🔍 查詢補充：", results)
+# 主流程
+def main():
+    record_audio()
+    question = transcribe_audio().strip()
+    print("🧠 Whisper 辨識結果：", question)
 
-# Step 4: 整理 Prompt 丟給 Ollama 回答
-prompt = f"""小朋友問了這個問題：{question}
-以下是 DuckDuckGo 的查詢摘要可以幫助你回答：
-{chr(10).join(results)}
+    if question:
+        # 包裝成兒童風格 prompt
+        prompt = f"請用可愛、簡單又親切的方式，告訴 6 到 8 歲小朋友：「{question}」"
+        answer = search(prompt)
+        print("🔍 查詢回答：", answer)
+        print("🔊 語音合成中...")
+        speak(answer)
+    else:
+        print("😅 沒聽清楚，請再試一次！")
 
-請用簡單、有趣的方式回答小朋友的問題。
-"""
-answer = ask_llama(prompt)
-print("🤖 AI 回答：", answer)
+if __name__ == "__main__":
+    main()
