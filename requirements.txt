@@ -1,0 +1,22 @@
+# 語音處理相關
+faster-whisper>=0.9.0
+sounddevice>=0.4.6
+soundfile>=0.12.1
+scipy>=1.11.3
+numpy>=1.24.0
+
+# 語音合成
+gTTS>=2.3.2
+pyttsx3>=2.90
+
+# AI 和搜尋相關
+requests>=2.31.0
+duckduckgo-search>=4.1.1
+google-api-python-client>=2.108.0
+google-search-results>=2.4.2
+
+# 音訊處理
+pydub>=0.25.1
+
+# GUI
+PyQt6>=6.6.1

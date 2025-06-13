@@ -36,4 +36,5 @@ def transcribe(filename=FILENAME):
 
 if __name__ == "__main__":
     record_audio()
+    print(f"input.wav 檔案大小: {os.path.getsize('input.wav')} bytes")
     transcribe()

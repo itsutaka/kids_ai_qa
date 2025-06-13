@@ -1,0 +1,18 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 模組功能說明
+
+## 語音處理
+- [recorder.py](mdc:modules/recorder.py) - 使用 sounddevice 錄製語音
+- [transcriber.py](mdc:modules/transcriber.py) - 使用 faster-whisper 進行語音辨識
+- [speaker.py](mdc:modules/speaker.py) - 使用 pyttsx3 進行語音合成
+
+## AI 和搜尋
+- [llm.py](mdc:modules/llm.py) - 使用自定義 API 進行對話生成
+- [searcher.py](mdc:modules/searcher.py) - 使用 DuckDuckGo 進行網頁搜尋
+
+## 使用者介面
+- [gui.py](mdc:gui.py) - 使用 PyQt6 建立的圖形介面

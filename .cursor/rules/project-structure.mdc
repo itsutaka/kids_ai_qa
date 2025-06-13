@@ -1,0 +1,19 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 專案結構指南
+
+## 主要檔案
+- [main.py](mdc:main.py) - 主程式入口點
+- [gui.py](mdc:gui.py) - 圖形使用者介面
+- [requirements.txt](mdc:requirements.txt) - 專案依賴套件
+
+## 模組目錄
+- [modules/](mdc:modules) - 包含所有功能模組
+  - [transcriber.py](mdc:modules/transcriber.py) - 語音轉文字
+  - [searcher.py](mdc:modules/searcher.py) - 網頁搜尋
+  - [llm.py](mdc:modules/llm.py) - AI 對話
+  - [speaker.py](mdc:modules/speaker.py) - 語音合成
+  - [recorder.py](mdc:modules/recorder.py) - 語音錄製
