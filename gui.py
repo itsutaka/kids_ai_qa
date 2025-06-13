@@ -2,15 +2,19 @@ import sys
 import threading
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, 
                             QTextEdit, QVBoxLayout, QHBoxLayout, 
-                            QWidget, QLabel)
+                            QWidget, QLabel, QComboBox)
 from PyQt6.QtCore import Qt, pyqtSignal, QObject
 from PyQt6.QtGui import QFont, QIcon
+import pygame
+import tempfile
+import os
 
 from modules.transcriber import transcribe
 from modules.searcher import web_search
 from modules.llm import ask_ai
 from modules.speaker import speak, stop_speaking
 from modules.recorder import record_audio
+from modules.llm_gemini import ask_gemini, speak_by_google_tts
 
 class WorkerSignals(QObject):
     finished = pyqtSignal(str)
@@ -57,6 +61,12 @@ class MainWindow(QMainWindow):
         self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.status_label)
         
+        # 在錄音按鈕上方
+        self.tts_selector = QComboBox()
+        self.tts_selector.addItem("本地TTS")
+        self.tts_selector.addItem("Gemini語音回答")
+        layout.addWidget(self.tts_selector)
+        
         # 錄音按鈕
         self.record_button = QPushButton("🎙️ 開始錄音")
         self.record_button.setMinimumHeight(50)
@@ -91,6 +101,10 @@ class MainWindow(QMainWindow):
         self.clear_button = QPushButton("🗑️ 清除")
         self.clear_button.clicked.connect(self.clear_all)
         button_layout.addWidget(self.clear_button)
+        
+        self.speak_gemini_button = QPushButton("🌐 Gemini語音回答")
+        self.speak_gemini_button.clicked.connect(self.speak_gemini_answer)
+        button_layout.addWidget(self.speak_gemini_button)
         
         layout.addLayout(button_layout)
         
@@ -177,9 +191,15 @@ class MainWindow(QMainWindow):
 
     def speak_answer(self):
         if self.answer_display.toPlainText():
-            worker = Worker(speak, self.answer_display.toPlainText())
-            worker.signals.error.connect(self.on_error)
-            worker.start()
+            if self.tts_selector.currentText() == "本地TTS":
+                worker = Worker(speak, self.answer_display.toPlainText())
+                worker.signals.error.connect(self.on_error)
+                worker.start()
+            else:
+                # 使用 Gemini 語音回答
+                worker = Worker(speak_by_google_tts, self.answer_display.toPlainText())
+                worker.signals.error.connect(self.on_error)
+                worker.start()
 
     def clear_all(self):
         self.question_display.clear()
@@ -194,6 +214,29 @@ class MainWindow(QMainWindow):
     def force_stop_speaking(self):
         stop_speaking()
         self.status_label.setText("AI說話已強制停止！")
+
+    def speak_gemini_answer(self):
+        question = self.question_display.toPlainText()
+        if question:
+            answer = ask_gemini(question)
+            self.answer_display.setText(answer)
+            threading.Thread(target=speak_by_google_tts, args=(answer,)).start()
+
+def play_audio(file_path):
+    pygame.mixer.init()
+    pygame.mixer.music.load(file_path)
+    pygame.mixer.music.play()
+    while pygame.mixer.music.get_busy():
+        continue
+    pygame.mixer.quit()
+
+def speak_by_google_tts(text, lang="zh-TW"):
+    # ...（TTS 產生 mp3 檔案）...
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as out:
+        out.write(response.audio_content)
+        tmp_path = out.name
+    play_audio(tmp_path)
+    os.remove(tmp_path)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

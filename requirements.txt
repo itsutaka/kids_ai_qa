@@ -20,3 +20,8 @@ pydub>=0.25.1
 
 # GUI
 PyQt6>=6.6.1
+
+# 新增的 Google Generative AI 和 Text-to-Speech 相關
+google-generativeai>=0.8.5
+google-cloud-texttospeech>=2.27.0
+pygame>=2.5.2
