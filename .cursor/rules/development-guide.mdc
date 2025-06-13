@@ -1,0 +1,40 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 開發指南
+
+## 環境設定
+1. 安裝依賴套件：
+```bash
+pip install -r requirements.txt
+```
+
+## 執行應用程式
+1. 命令列版本：
+```bash
+python main.py
+```
+
+2. 圖形介面版本：
+```bash
+python gui.py
+```
+
+## API 設定
+- LLM API 端點設定在 [modules/llm.py](mdc:modules/llm.py)
+- 預設使用本地 API：http://127.0.0.1:1234
+
+## 開發注意事項
+1. 語音處理相關：
+   - 確保系統已安裝必要的音訊驅動
+   - macOS 需要安裝 libsndfile
+
+2. GUI 開發：
+   - 使用 PyQt6 進行開發
+   - 遵循現有的 UI 設計風格
+
+3. 錯誤處理：
+   - 所有模組都包含基本的錯誤處理
+   - 新增功能時請保持一致的錯誤處理方式

@@ -1,4 +1,4 @@
-import ollama
+import requests
 
 # 建立一個提示詞模板，幫助模型用兒童語氣回答
 prompt_template = (
@@ -14,13 +14,20 @@ def ask_ai(question, context=""):
     # 建立 prompt，將搜尋到的資料也放進去
     prompt = prompt_template.format(question=question, context=context)
 
-    # 呼叫 Ollama 本地模型
-    response = ollama.chat(
-        model="llama2-chinese:7b-chat-q4_0",
-        messages=[
-            {"role": "user", "content": prompt}
-        ]
+    # 呼叫自定義 API
+    response = requests.post(
+        "http://192.168.1.187:1234/v1/chat/completions",
+        json={
+            "messages": [
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.7,
+            "max_tokens": 1000
+        }
     )
-
-    answer = response['message']['content']
-    return answer.strip()
+    
+    if response.status_code == 200:
+        answer = response.json()['choices'][0]['message']['content']
+        return answer.strip()
+    else:
+        return "抱歉，我現在無法回答這個問題。"
