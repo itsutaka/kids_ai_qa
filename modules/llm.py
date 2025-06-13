@@ -1,32 +1,26 @@
-from duckduckgo_search import DDGS
 import ollama
 
-def simplify_for_kids(text):
-    # 非常基礎的簡化語氣方式（可再優化）
-    replacements = {
-        "因此": "所以",
-        "然而": "但是",
-        "例如": "比方說",
-        "這意味著": "這表示",
-        "我們可以得出結論": "我們可以知道",
-        "這個現象": "這件事情"
-    }
-    for k, v in replacements.items():
-        text = text.replace(k, v)
-    return text
+# 建立一個提示詞模板，幫助模型用兒童語氣回答
+prompt_template = (
+    "你是一位親切的兒童老師，會用簡單、可愛、有趣的方式回答 6 到 8 歲小朋友的問題，"
+    "不使用專業術語，也不說太複雜的話。請用以下格式回答：\n"
+    "1. 先用親切的語氣開場白。\n"
+    "2. 解釋重點，用小朋友聽得懂的話。\n"
+    "3. 結尾用鼓勵孩子探索或發問的語氣。\n"
+    "問題是：{question}\n\n這是一些參考資料：\n{context}"
+)
 
-def ask_ai(question, context):
-    prompt = f"""
-你是一位友善的老師，正在跟 6 到 8 歲的小朋友說話。請用簡單、溫柔的語氣回答這個問題，並根據下面的資料來幫忙解釋：
+def ask_ai(question, context=""):
+    # 建立 prompt，將搜尋到的資料也放進去
+    prompt = prompt_template.format(question=question, context=context)
 
-問題：「{question}」
-資料：「{context}」
-
-請用簡短易懂的方式回答，讓小朋友聽得懂。
-"""
+    # 呼叫 Ollama 本地模型
     response = ollama.chat(
         model="llama2-chinese:7b-chat-q4_0",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[
+            {"role": "user", "content": prompt}
+        ]
     )
-    text = response['message']['content']
-    return simplify_for_kids(text.strip())
+
+    answer = response['message']['content']
+    return answer.strip()
