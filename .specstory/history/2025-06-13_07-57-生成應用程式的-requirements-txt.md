@@ -1948,7 +1948,59 @@ class MainWindow(QMainWindow):
                 self.start_recording()
             
             # 使用 QTimer 來延遲開始下一輪錄音
-            QT
+            QTimer.singleShot(1000, start_next_round)  # 延遲 1 秒後開始下一輪
+
+    def speak_answer(self):
+        if self.answer_display.toPlainText():
+            if self.tts_selector.currentText() == "本地TTS":
+                worker = Worker(speak, self.answer_display.toPlainText())
+                worker.signals.error.connect(self.on_error)
+                worker.start()
+            else:
+                # 使用 Gemini 語音回答
+                worker = Worker(speak_by_google_tts, self.answer_display.toPlainText())
+                worker.signals.error.connect(self.on_error)
+                worker.start()
+
+    def force_stop_speaking(self):
+        stop_speaking()
+        # 如果對話仍在進行中，立即開始下一輪
+        if self.is_conversation_active:
+            self.start_recording()
+```
+
+主要修改內容：
+
+1. 將「開始錄音」按鈕改為「開始對話」，並添加切換功能
+2. 添加 `is_conversation_active` 標記來追蹤對話狀態
+3. 新增 `toggle_conversation` 方法來處理對話的開始和結束
+4. 修改 `on_answer_finished` 方法，在回答完成後自動開始下一輪錄音
+5. 在 `force_stop_speaking` 方法中，如果對話仍在進行，則立即開始下一輪
+
+使用方式：
+1. 點擊「開始對話」按鈕開始連續對話
+2. 系統會自動錄音、轉錄、搜尋、生成回答並播放
+3. 播放完回答後，會自動開始下一輪錄音
+4. 點擊「正在對話」按鈕可以結束對話
+
+請注意，你需要在檔案開頭添加：
+```python
+from PyQt6.QtCore import QTimer
+```
+
+這樣的修改可以讓應用程式以對話的形式運作，使用者可以持續與 AI 進行對話，直到主動結束對話為止。每次 AI 回答完後，系統會自動開始下一輪錄音，形成自然的對話流程。
+
+---
+
+_**User**_
+
+應用程式測試時，電腦還在回答，就開始收音，結果電腦會收到自己發出的聲音，進入無限循環的對話
+
+---
+
+_**Assistant**_
+
+
 
 ---
 

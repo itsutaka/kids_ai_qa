@@ -111,6 +111,9 @@ class MainWindow(QMainWindow):
         # 添加對話狀態標記
         self.is_conversation_active = False
         
+        # 添加語音播放狀態追蹤
+        self.is_speaking = False
+        
         # 設定樣式
         self.setStyleSheet("""
             QMainWindow {
@@ -204,28 +207,33 @@ class MainWindow(QMainWindow):
         
         # 自動播放回答
         self.speak_answer()
-        
-        # 如果對話仍在進行中，自動開始下一輪錄音
-        if self.is_conversation_active:
-            # 等待語音播放完成後再開始下一輪
-            def start_next_round():
-                self.record_button.setEnabled(True)
-                self.start_recording()
-            
-            # 使用 QTimer 來延遲開始下一輪錄音
-            QTimer.singleShot(1000, start_next_round)  # 延遲 1 秒後開始下一輪
+        # 注意：不再在這裡直接開始下一輪錄音，而是等待語音播放完成後再開始
 
     def speak_answer(self):
         if self.answer_display.toPlainText():
+            self.is_speaking = True
             if self.tts_selector.currentText() == "本地TTS":
                 worker = Worker(speak, self.answer_display.toPlainText())
                 worker.signals.error.connect(self.on_error)
+                worker.signals.finished.connect(self.on_speaking_finished)
                 worker.start()
             else:
                 # 使用 Gemini 語音回答
                 worker = Worker(speak_by_google_tts, self.answer_display.toPlainText())
                 worker.signals.error.connect(self.on_error)
+                worker.signals.finished.connect(self.on_speaking_finished)
                 worker.start()
+
+    def on_speaking_finished(self):
+        self.is_speaking = False
+        # 如果對話仍在進行中，等待一小段時間後再開始下一輪
+        if self.is_conversation_active:
+            QTimer.singleShot(2000, self.start_next_round)  # 延遲 2 秒後開始下一輪
+
+    def start_next_round(self):
+        if self.is_conversation_active and not self.is_speaking:
+            self.record_button.setEnabled(True)
+            self.start_recording()
 
     def clear_all(self):
         self.question_display.clear()
@@ -239,9 +247,10 @@ class MainWindow(QMainWindow):
 
     def force_stop_speaking(self):
         stop_speaking()
-        # 如果對話仍在進行中，立即開始下一輪
+        self.is_speaking = False
+        # 如果對話仍在進行中，等待一小段時間後再開始下一輪
         if self.is_conversation_active:
-            self.start_recording()
+            QTimer.singleShot(2000, self.start_next_round)
 
     def speak_gemini_answer(self):
         question = self.question_display.toPlainText()
